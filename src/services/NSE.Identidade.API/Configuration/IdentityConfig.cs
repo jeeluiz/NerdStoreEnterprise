@@ -28,5 +28,5 @@ namespace NSE.Identidade.API.Configuration
 
             return services;
         }
-    }
+     }
 }

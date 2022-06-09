@@ -1,5 +1,5 @@
 using NSE.WebApp.MVC.Configuration;
-using NSE.WebApp.MVC.Extencions;
+using NSE.WebApp.MVC.Extensions;
 using Topshelf.Runtime;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,7 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMvcConfiguration(builder.Configuration);
 
 builder.Services.AddIdentityConfiguration();
-builder.Services.RegistroService(); 
+builder.Services.RegistroService(builder.Configuration); 
 
 
 

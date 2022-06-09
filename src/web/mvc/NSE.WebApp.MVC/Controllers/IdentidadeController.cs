@@ -10,11 +10,11 @@ namespace NSE.WebApp.MVC.Controllers
 {
     public class IdentidadeController : MainController
     {
-        private readonly IAutenticacaoService _autenticacaService;
+        private readonly IAutenticacaoService _autenticacaoService;
 
-        public IdentidadeController(IAutenticacaoService autenticacaService)
+        public IdentidadeController(IAutenticacaoService autenticacaoService)
         {
-            _autenticacaService = autenticacaService;
+            _autenticacaoService = autenticacaoService;
         }
 
         [HttpGet]
@@ -30,14 +30,13 @@ namespace NSE.WebApp.MVC.Controllers
         {
             if (!ModelState.IsValid) return View(usuarioRegistro);
 
-            var resposta = await _autenticacaService.Registro(usuarioRegistro);
+            var resposta = await _autenticacaoService.Registro(usuarioRegistro);
 
             if (ResponsePossuiErros(resposta.ResponseResult)) return View(usuarioRegistro);
 
             await RealizarLogin(resposta);
 
-            return RedirectToAction("Index", "home");
-
+            return RedirectToAction("Index", "Catalogo");
         }
 
         [HttpGet]
@@ -50,20 +49,20 @@ namespace NSE.WebApp.MVC.Controllers
 
         [HttpPost]
         [Route("login")]
-        public async Task<IActionResult> Login(UsuarioLogin usuarioLogin, string returnUrl = null)
+        public async Task<IActionResult> Login(UsuarioLogin usuarioLogin, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
             if (!ModelState.IsValid) return View(usuarioLogin);
 
-            var resposta = await _autenticacaService.Login(usuarioLogin);
+            var resposta = await _autenticacaoService.Login(usuarioLogin);
 
             if (ResponsePossuiErros(resposta.ResponseResult)) return View(usuarioLogin);
 
-            if (string.IsNullOrEmpty(returnUrl)) return RedirectToAction("Index", controllerName:"Home");
+            await RealizarLogin(resposta);
+
+            if (string.IsNullOrEmpty(returnUrl)) return RedirectToAction("Index", "Catalogo");
 
             return LocalRedirect(returnUrl);
-                
-           
         }
 
         [HttpGet]
@@ -71,7 +70,7 @@ namespace NSE.WebApp.MVC.Controllers
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Index","home");
+            return RedirectToAction("Index", "Catalogo");
         }
 
         private async Task RealizarLogin(UsuarioRespostaLogin resposta)
@@ -79,19 +78,19 @@ namespace NSE.WebApp.MVC.Controllers
             var token = ObterTokenFormatado(resposta.AccessToken);
 
             var claims = new List<Claim>();
-            claims.Add(new Claim("jWT", resposta.AccessToken));  
+            claims.Add(new Claim("JWT", resposta.AccessToken));
             claims.AddRange(token.Claims);
 
-            var claimsIdentity = new ClaimsIdentity(claims,CookieAuthenticationDefaults.AuthenticationScheme);
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
             var authProperties = new AuthenticationProperties
             {
                 ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(60),
-                IsPersistent = true,
+                IsPersistent = true
             };
 
             await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme, 
+                CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity),
                 authProperties);
         }
@@ -99,7 +98,8 @@ namespace NSE.WebApp.MVC.Controllers
         private static JwtSecurityToken ObterTokenFormatado(string jwtToken)
         {
             return new JwtSecurityTokenHandler().ReadToken(jwtToken) as JwtSecurityToken;
-        } 
+        }
+
     }
 
 }

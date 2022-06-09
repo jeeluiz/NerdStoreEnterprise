@@ -27,6 +27,7 @@ namespace NSe.Catalogo.API.Controller
         [HttpGet("catalogo/produtos/{id}")]
         public async Task<Produto>ProdutoDetalhe(Guid id)
         {
+            
             return await _produtoRepository.ObterPorId(id);
         }
     }

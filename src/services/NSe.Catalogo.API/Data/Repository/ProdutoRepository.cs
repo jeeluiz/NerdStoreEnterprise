@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using NSe.Catalogo.API.Data;
 using NSe.Catalogo.API.Models;
 using NSE.Core.Data;
 
-namespace NSe.Catalogo.API.Data.Repository
+namespace NSE.Catalogo.API.Data.Repository
 {
     public class ProdutoRepository : IProdutoRepository
     {
@@ -22,7 +23,7 @@ namespace NSe.Catalogo.API.Data.Repository
 
         public async Task<Produto> ObterPorId(Guid id)
         {
-            return await _context.Produtos.FindAsync(id); 
+            return await _context.Produtos.FindAsync(id);
         }
 
         public void Adicionar(Produto produto)
@@ -37,7 +38,7 @@ namespace NSe.Catalogo.API.Data.Repository
 
         public void Dispose()
         {
-            _context?.Dispose(); 
+            _context?.Dispose();
         }
     }
 }

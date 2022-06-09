@@ -6,8 +6,7 @@ namespace NSE.WebApp.MVC.Configuration
     {
         public static void AddIdentityConfiguration(this IServiceCollection services)
         {
-            services.AddMvc();
-            services.AddAuthorization();
+            
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
                 {

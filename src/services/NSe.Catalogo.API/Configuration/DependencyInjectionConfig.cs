@@ -1,6 +1,6 @@
 ﻿using NSe.Catalogo.API.Data;
-using NSe.Catalogo.API.Data.Repository;
 using NSe.Catalogo.API.Models;
+using NSE.Catalogo.API.Data.Repository;
 
 namespace NSe.Catalogo.API.Configuration
 {
