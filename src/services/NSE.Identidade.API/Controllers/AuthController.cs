@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using EasyNetQ;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using NSE.Identidade.API.Models; 
+using NSE.Core.Messages.Integration;
+using NSE.Identidade.API.Models;
 using NSE.WebApi.Core.Identidade;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -17,10 +19,12 @@ namespace NSE.Identidade.API.Controllers
         private readonly SignInManager<IdentityUser> _singInManager;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly AppSettings _appSettings;
+        private IBus _bus;
 
         public AuthController(SignInManager<IdentityUser> singInManager,
             UserManager<IdentityUser> userManager,
-            IOptions<AppSettings> appSettings)
+            IOptions<AppSettings> appSettings
+            )
         {
             _singInManager = singInManager;
             _userManager = userManager;
@@ -43,6 +47,7 @@ namespace NSE.Identidade.API.Controllers
 
             if (result.Succeeded)
             {
+                var sucesso = await RegistrarCliente(usuarioRegistro);
                 return CustomResponse(await GerarJwt(usuarioRegistro.Email));
             }
 
@@ -54,10 +59,23 @@ namespace NSE.Identidade.API.Controllers
             return CustomResponse();
         }
 
+        private async Task<ResponseMessage> RegistrarCliente(UsuarioRegistro usuarioRegistro)
+        {
+            var usuario = await _userManager.FindByNameAsync(usuarioRegistro.Email);
+
+            var usuarioRegistrado = new UsuarioRegistradoIntegrationEvent
+                (Guid.Parse(usuario.Id), usuarioRegistro.Cpf, usuarioRegistro.Nome, usuarioRegistro.Email);
+
+            _bus = RabbitHutch.CreateBus("host=localhost:5672");
+
+            var sucesso = await _bus.Rpc.RequestAsync<UsuarioRegistradoIntegrationEvent, ResponseMessage>(usuarioRegistrado);
+            return sucesso;
+        }
+
         [HttpPost("autenticar")]
         public async Task<ActionResult> Login(UsuarioLogin usuarioLogin)
         {
-            
+
             if (!ModelState.IsValid) return CustomResponse(ModelState);
 
             var result = await _singInManager.PasswordSignInAsync(usuarioLogin.Email, usuarioLogin.Senha,
@@ -82,7 +100,7 @@ namespace NSE.Identidade.API.Controllers
         {
             var user = await _userManager.FindByEmailAsync(email);
             var claims = await _userManager.GetClaimsAsync(user);
-            
+
             var identityClaims = await ObterClaimsUsuario(claims, user);
             var encondedToken = CodificarToken(identityClaims);
 
@@ -108,7 +126,7 @@ namespace NSE.Identidade.API.Controllers
 
             return identityClaims;
         }
-        
+
         private string CodificarToken(ClaimsIdentity identityClaims)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
